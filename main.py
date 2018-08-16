@@ -108,14 +108,16 @@ class ECSConsulReg:
             if "exec_" in action:
                 continue
 
+            # Ignore image destroy (ecs does this regularly)
+            if action == 'destroy':
+                continue
+
             log.debug("Event [{}] type=[{}]".format(action, type))
 
             if type != 'container':
                 continue
 
-            # todo: pull, start
-
-            if action not in ['health_status: healthy', 'health_status: unhealthy', 'destroy', 'start', 'die', 'kill', 'oom']:
+            if action not in ['health_status: healthy', 'health_status: unhealthy', 'pull', 'start', 'stop', 'die', 'kill', 'oom']:
                 continue
 
             id = data['Actor']['ID']
@@ -143,7 +145,6 @@ class ECSConsulReg:
                 if id in self.registered:
                     self.deregister_service(id, name)
                 continue
-
 
 
     def get_host_port(self, container_id):
