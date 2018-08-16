@@ -1,5 +1,5 @@
 import sys
-import signal
+import traceback
 import logging
 import json
 import yaml
@@ -115,7 +115,7 @@ class ECSConsulReg:
 
             # todo: pull, start
 
-            if action not in ['health_status: healthy', 'health_status: unhealthy', 'start', 'die', 'kill', 'oom']:
+            if action not in ['health_status: healthy', 'health_status: unhealthy', 'destroy', 'start', 'die', 'kill', 'oom']:
                 continue
 
             id = data['Actor']['ID']
@@ -124,12 +124,25 @@ class ECSConsulReg:
             if not name:
                 continue
 
+            log.info("{} - {}".format(name, action))
+
             if action == "health_status: unhealthy":
                 if id in self.registered:
                     self.deregister_service(id, name)
+                continue
 
             if action == "health_status: healthy":
-                self.register_service(id, name)
+                port = self.get_host_port(id)
+                if not port:
+                    log.info("Skipping {} as no port found".format(name))
+                    continue
+                self.register_service(id, name, port)
+                continue
+
+            if action in ['kill', 'die', 'stop']:
+                if id in self.registered:
+                    self.deregister_service(id, name)
+                continue
 
 
 
@@ -193,11 +206,11 @@ def main(config):
         reg.watch_events()
 
     except KeyboardInterrupt:
-        pass
+        log.info("Keyboard Interupt... exiting")
     except SystemExit:
-        pass
+        log.info("System Exit... exiting")
     except Exception:
-        pass
+        log.error(traceback.format_exc())
     finally:
         reg.deregister_services()
 
