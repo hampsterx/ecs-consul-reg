@@ -1,14 +1,16 @@
-import sys
+import os
 import traceback
 import logging
 import json
 import yaml
 import consul
 import click
-
-from docker.models.containers import Container
 import docker
+from requests.exceptions import ConnectionError
+from logging.handlers import TimedRotatingFileHandler
+from docker.models.containers import Container
 
+log = logging.getLogger(__name__)
 
 # Monkey Patch
 # @see https://github.com/docker/docker-py/pull/1726
@@ -25,76 +27,64 @@ def health(self):
 
 Container.health = health
 
+def configure_logging(options):
 
-log = logging.getLogger(__name__)
-log.addHandler(logging.StreamHandler())
-log.setLevel(logging.DEBUG)
+    log = logging.getLogger()
+    log.addHandler(logging.StreamHandler())
+    log.setLevel(options['loglevel'])
 
-
-
-
-
-
-#check =
-
-# http://172.31.141.175:8500/v1/catalog/service/test
-
-#c.agent.service.deregister(service_id="test")
+    if options['logfile']:
+        file_handler = TimedRotatingFileHandler(options['logfile'],
+                                               when="midnight",
+                                               interval=1, backupCount=5)
+        file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        log.addHandler(file_handler)
 
 
-#raise
+class Config:
 
-"""
+    def __init__(self, file_path, defaults={}):
 
+        if os.path.exists(file_path):
+            with file(file_path, 'r') as f:
+                self.config = yaml.load(f)
+        else:
+            self.config = {}
 
-while True:
-    import time
-    time.sleep(1)
+        self.defaults = defaults
 
-    for c in client.containers.list():
-        print(c.id, c.status, c.health)
-
-raise
-
-events = client.events()
-
-log.info("Starting up..")
-
-for event in events:
-    #import pdb
-    #pdb.set_trace()
-
-    
-
-    print(action, type)
-
-    if type != 'container':
-        continue
-
-    print(action)
-
-    #if action not in ['start', 'die', 'kill', 'oom']:
-    #    continue
-
-    status = data['status']
-    id = data['id']
-
-    print(json.dumps(data, indent=True))
-
-"""
-
-
+    def get(self, name):
+        return os.getenv(name, self.config.get(name, self.defaults[name]))
 
 
 class ECSConsulReg:
 
     def __init__(self, config):
         self.config = config
+
+        # Hold Registered services
+        self.registered = {}
+
+    def init(self):
+
         self.docker_client = docker.from_env()
         self.docker_api_client = docker.APIClient(base_url='unix://var/run/docker.sock')
 
-        self.consul_client = consul.Consul(host=config['ConsulHost'], port=int(config.get('ConsulPort', 8500)))
-        self.registered = {}
+        consul_host = self.config.get('CONSUL_HOST')
+        consul_port = int(self.config.get('CONSUL_PORT'))
+
+        log.info("Using Consul Agent at {}:{}".format(consul_host, consul_port))
+
+        self.consul_client = consul.Consul(host=consul_host, port=consul_port)
+
+        try:
+            peers = self.consul_client.status.peers()
+            log.info("Consul Agent has {} peers".format(len(peers)))
+        except ConnectionError:
+            log.error("Could not connect with Consul Agent. Exiting..")
+            return False
+
+        return True
 
     def watch_events(self):
         events = self.docker_client.events()
@@ -173,8 +163,13 @@ class ECSConsulReg:
 
     def register_healthy_containers(self):
         containers = [c for c in self.docker_client.containers.list()]
-
         for c in containers:
+
+            name = c.labels.get('com.amazonaws.ecs.container-name')
+
+            if not name:
+                continue
+
             if c.health != 'healthy':
                 log.info("Skipping {} as not healthy".format(c.id))
                 continue
@@ -184,8 +179,6 @@ class ECSConsulReg:
                 log.info("Skipping {} as no port found".format(c.id))
                 continue
 
-            name = c.labels['com.amazonaws.ecs.container-name']
-
             self.register_service(id=c.id, name=name, port=port)
 
     def get_services(self):
@@ -194,22 +187,32 @@ class ECSConsulReg:
 
 
 @click.command()
-@click.option('--config', default="/etc/ecs-consul-reg.yaml")
-def main(config):
+@click.option('-c', '--config', default="/etc/ecs-consul-reg.yaml")
+@click.option('-lf', '--logfile', default=None)
+@click.option('-ll', '--loglevel', default="INFO")
+def main(config, **options):
 
+    configure_logging(options)
 
-    with file(config, 'r') as f:
-        config = yaml.load(f)
+    config_defaults = {
+        'CONSUL_HOST': '127.0.0.1',
+        'CONSUL_PORT': '8500'
+    }
+
+    config = Config(file_path=config, defaults=config_defaults)
 
     try:
         reg = ECSConsulReg(config)
+        if not reg.init():
+            return
+
         reg.register_healthy_containers()
         reg.watch_events()
 
     except KeyboardInterrupt:
-        log.info("Keyboard Interupt... exiting")
+        log.info("Keyboard Interupt... exiting gracefully")
     except SystemExit:
-        log.info("System Exit... exiting")
+        log.info("System Exit... exiting gracefully")
     except Exception:
         log.error(traceback.format_exc())
     finally:
