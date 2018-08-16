@@ -104,10 +104,16 @@ class ECSConsulReg:
             action = data['Action']
             type = data['Type']
 
+            # Ignore health checks
+            if "exec_" in action:
+                continue
+
             log.debug("Event [{}] type=[{}]".format(action, type))
 
             if type != 'container':
                 continue
+
+            # todo: pull, start
 
             if action not in ['health_status: healthy', 'health_status: unhealthy', 'start', 'die', 'kill', 'oom']:
                 continue
@@ -121,6 +127,10 @@ class ECSConsulReg:
             if action == "health_status: unhealthy":
                 if id in self.registered:
                     self.deregister_service(id, name)
+
+            if action == "health_status: healthy":
+                self.register_service(id, name)
+
 
 
     def get_host_port(self, container_id):
