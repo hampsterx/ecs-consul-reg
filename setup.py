@@ -1,13 +1,13 @@
 from setuptools import setup
 
-with open('README.md', encoding='utf-8') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(name='ecs-consul-reg',
       description='AWS ECS Consul Registration',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      version='0.0.4',
+      version='0.0.5',
       url='https://github.com/hampsterx/ecs-consul-reg',
       author='Tim van der Hulst',
       author_email='tim.vdh@gmail.com',
