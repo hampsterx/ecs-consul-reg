@@ -1,2 +1,45 @@
 # ecs consul reg
 
+Docker container registration for Consul on AWS ECS.
+
+You may want to use [registrator](https://github.com/gliderlabs/registrator) instead.
+Main differences:
+
+- python based (If I was comfortable with Golang I would probably just contribute to registrator instead)
+- intended to be run on ec2 not within docker
+    - will create docker image at some point though
+- keeps detailed logs (to file, structured output data coming soon)
+- Uses Docker Health instead of running it's own checks
+    - @see [gliderlabs:issues/578](https://github.com/gliderlabs/registrator/issues/578)
+
+## Install on Amazon Linux
+
+    curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+    python get-pip.py
+    pip install ecs-consul-reg
+
+## Initctl script
+
+    todo~
+
+## Options
+
+    CONSUL_HOST=127.0.0.1
+    CONSUL_PORT=8500
+
+Options can be supplied as env or in yaml config.
+
+```
+Usage: main.py [OPTIONS]
+
+Options:
+  -c, --config TEXT
+  -lf, --logfile TEXT
+  -ll, --loglevel TEXT
+  --help                Show this message and exit.
+```
+
+
+
+
+

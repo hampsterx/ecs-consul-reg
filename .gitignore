@@ -1,4 +1,7 @@
+dist
+*.egg-info
 .idea
 *.pyc
+build
 notes.txt
 *.yaml
