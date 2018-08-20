@@ -6,6 +6,7 @@ import yaml
 import consul
 import click
 import docker
+from consul import ConsulException
 from requests.exceptions import ConnectionError
 from logging.handlers import TimedRotatingFileHandler
 from docker.models.containers import Container
@@ -46,7 +47,7 @@ class Config:
     def __init__(self, file_path, defaults={}):
 
         if os.path.exists(file_path):
-            with file(file_path, 'r') as f:
+            with open(file_path, 'r') as f:
                 self.config = yaml.load(f)
         else:
             self.config = {}
@@ -82,6 +83,9 @@ class ECSConsulReg:
             log.info("Consul Agent has {} peers".format(len(peers)))
         except ConnectionError:
             log.error("Could not connect with Consul Agent. Exiting..")
+            return False
+        except ConsulException as e:
+            log.error("Consul issue: {}".format(e))
             return False
 
         return True

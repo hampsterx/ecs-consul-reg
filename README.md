@@ -12,7 +12,7 @@ Main differences:
 - Uses Docker Health instead of running it's own checks
     - @see [gliderlabs:issues/578](https://github.com/gliderlabs/registrator/issues/578)
 
-## Install on Amazon Linux
+## Install on Amazon ECS-Optimized Amazon Linux AMI 2018.03.c
 
 Pip is not installed:
 
