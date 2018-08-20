@@ -7,7 +7,7 @@ setup(name='ecs-consul-reg',
       description='AWS ECS Consul Registration',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      version='0.0.2',
+      version='0.0.4',
       url='https://github.com/hampsterx/ecs-consul-reg',
       author='Tim van der Hulst',
       author_email='tim.vdh@gmail.com',
@@ -27,7 +27,7 @@ setup(name='ecs-consul-reg',
       ],
       entry_points={
           'console_scripts': [
-              'ecs-consul-reg=ecs_consul_reg.main:run'
+              'ecs-consul-reg=ecs_consul_reg.main:main'
           ]
       }
 )

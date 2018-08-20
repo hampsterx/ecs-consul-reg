@@ -14,10 +14,19 @@ Main differences:
 
 ## Install on Amazon Linux
 
+Pip is not installed:
+
     curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
     python get-pip.py
+
+## Install
+
     pip install ecs-consul-reg
 
+## Run
+
+    ecs-consul-reg
+ 
 ## Initctl script
 
     todo~
