@@ -5,3 +5,4 @@ dist
 build
 notes.txt
 *.yaml
+*.log

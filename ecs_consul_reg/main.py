@@ -6,6 +6,7 @@ import yaml
 import consul
 import click
 import docker
+from simple_json_log_formatter import SimpleJsonFormatter
 from consul import ConsulException
 from requests.exceptions import ConnectionError
 from logging.handlers import TimedRotatingFileHandler
@@ -38,7 +39,7 @@ def configure_logging(options):
         file_handler = TimedRotatingFileHandler(options['logfile'],
                                                when="midnight",
                                                interval=1, backupCount=5)
-        file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        file_handler.setFormatter(SimpleJsonFormatter(json.dumps))
         log.addHandler(file_handler)
 
 
@@ -120,7 +121,7 @@ class ECSConsulReg:
             if not name:
                 continue
 
-            log.info("{} - {}".format(name, action))
+            log.info("{} - {}".format(name, action), extra={'event': action, 'type': type, 'container.name': name, 'attributes': data['Actor']['Attributes'],  'service.name': "consul-reg"})
 
             if action == "health_status: unhealthy":
                 if id in self.registered:

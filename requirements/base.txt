@@ -2,3 +2,5 @@ python-consul==1.1.0
 docker==3.5.0
 PyYAML
 click==6.7
+simple-json-log-formatter==0.5.3
+
