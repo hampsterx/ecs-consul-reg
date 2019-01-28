@@ -7,7 +7,7 @@ setup(name='ecs-consul-reg',
       description='AWS ECS Consul Registration',
       long_description=long_description,
       long_description_content_type="text/markdown",
-      version='0.0.7',
+      version='0.0.8',
       url='https://github.com/hampsterx/ecs-consul-reg',
       author='Tim van der Hulst',
       author_email='tim.vdh@gmail.com',
@@ -23,7 +23,8 @@ setup(name='ecs-consul-reg',
           'PyYAML',
           'python-consul==1.1.0',
           'docker==3.5.0',
-          'click==6.7'
+          'click==6.7',
+          'simple-json-log-formatter==0.5.3',
       ],
       entry_points={
           'console_scripts': [
