@@ -129,11 +129,11 @@ class ECSConsulReg:
                 continue
 
             if action == "health_status: healthy":
-                port = self.get_host_port(id)
-                if not port:
+                ports = self.get_host_ports(id)
+                if not ports:
                     log.info("Skipping {} as no port found".format(name))
                     continue
-                self.register_service(id, name, port)
+                self.register_services(id, name, ports)
                 continue
 
             if action in ['kill', 'die', 'stop']:
@@ -142,12 +142,10 @@ class ECSConsulReg:
                 continue
 
 
-    def get_host_port(self, container_id):
+    def get_host_ports(self, container_id):
         port_data = self.docker_api_client.inspect_container(container_id)['NetworkSettings']['Ports']
-
         if port_data:
-            host_info = port_data[port_data.keys()[0]][0]
-            return int(host_info['HostPort'])
+            return [int(p[0]['HostPort']) for p in port_data.values()]
 
         return None
 
@@ -166,6 +164,11 @@ class ECSConsulReg:
 
         self.consul_client.agent.service.register(name=name, service_id=id, port=port, tags=['app']) #, check=check)
 
+    def register_services(self, id, name, ports):
+        for port in ports:
+            unique_name = "{}-{}".format(name, port) if len(ports) > 1 else name
+            self.register_service(id="{}_{}".format(id, unique_name), name=unique_name, port=port)
+
     def register_healthy_containers(self):
         containers = [c for c in self.docker_client.containers.list()]
         for c in containers:
@@ -179,12 +182,12 @@ class ECSConsulReg:
                 log.info("Skipping {} as not healthy".format(c.id))
                 continue
 
-            port = self.get_host_port(c.id)
-            if not port:
+            ports = self.get_host_ports(c.id)
+            if not ports:
                 log.info("Skipping {} as no port found".format(c.id))
                 continue
 
-            self.register_service(id=c.id, name=name, port=port)
+            self.register_services(c.id, name, ports)
 
     def get_services(self):
         return self.consul_client.agent.services()
