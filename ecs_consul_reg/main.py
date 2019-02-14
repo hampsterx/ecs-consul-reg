@@ -145,7 +145,7 @@ class ECSConsulReg:
     def get_host_ports(self, container_id):
         port_data = self.docker_api_client.inspect_container(container_id)['NetworkSettings']['Ports']
         if port_data:
-            return [int(p[0]['HostPort']) for p in port_data.values()]
+            return [(int(k.split("/")[0]), int(p[0]['HostPort'])) for k,p in port_data.items()]
 
         return None
 
@@ -164,10 +164,10 @@ class ECSConsulReg:
 
         self.consul_client.agent.service.register(name=name, service_id=id, port=port, tags=['app']) #, check=check)
 
-    def register_services(self, id, name, ports):
-        for port in ports:
-            unique_name = "{}-{}".format(name, port) if len(ports) > 1 else name
-            self.register_service(id="{}_{}".format(id, unique_name), name=unique_name, port=port)
+    def register_services(self, id, name, port_info):
+        for ports in port_info:
+            unique_name = "{}-{}".format(name, ports[0]) if len(ports) > 1 else name
+            self.register_service(id="{}_{}".format(id, unique_name), name=unique_name, port=ports[1])
 
     def register_healthy_containers(self):
         containers = [c for c in self.docker_client.containers.list()]
