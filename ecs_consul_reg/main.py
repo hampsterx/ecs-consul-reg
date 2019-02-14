@@ -166,7 +166,7 @@ class ECSConsulReg:
 
     def register_services(self, id, name, port_info):
         for ports in port_info:
-            unique_name = "{}-{}".format(name, ports[0]) if len(ports) > 1 else name
+            unique_name = "{}-{}".format(name, ports[0]) if len(port_info) > 1 else name
             self.register_service(id="{}_{}".format(id, unique_name), name=unique_name, port=ports[1])
 
     def register_healthy_containers(self):
