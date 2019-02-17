@@ -121,7 +121,7 @@ class ECSConsulReg:
             if not name:
                 continue
 
-            log.info("{} - {}".format(name, action), extra={'event': action, 'type': type, 'container.name': name, 'attributes': data['Actor']['Attributes'],  'service.name': "consul-reg"})
+            log.info("{} - {}".format(name, action), extra={'event': action, 'type': type, 'id': id, 'container.name': name, 'attributes': data['Actor']['Attributes'],  'service.name': "consul-reg"})
 
             if action == "health_status: unhealthy":
                 if id in self.registered:
@@ -137,8 +137,9 @@ class ECSConsulReg:
                 continue
 
             if action in ['kill', 'die', 'stop']:
-                if id in self.registered:
-                    self.deregister_service(id, name)
+                for _id in self.registered:
+                    if id in _id:
+                        self.deregister_service(_id, name)
                 continue
 
 
