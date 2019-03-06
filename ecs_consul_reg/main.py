@@ -146,7 +146,7 @@ class ECSConsulReg:
     def get_host_ports(self, container_id):
         port_data = self.docker_api_client.inspect_container(container_id)['NetworkSettings']['Ports']
         if port_data:
-            return [(int(k.split("/")[0]), int(p[0]['HostPort'])) for k,p in port_data.items()]
+            return [(int(k.split("/")[0]), int(p[0]['HostPort'])) for k,p in port_data.items() if p]
 
         return None
 
